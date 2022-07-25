@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>NF3D - Model your NFT</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <script src="https://unpkg.com/moralis/dist/moralis.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    
+    <link href="css/cover.css" rel="stylesheet">
+
+    <script src="js/three.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/GLTFLoader.js"></script>
+    <script src="js/GLTFExporter.js"></script>
+    <script src="js/threed.js" defer></script>
+    <script type="text/javascript" src="js/main.js"></script>
+    <style>
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+    </style>
+
+
+    </head>
+  
+  <body class="text-center">
+    <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+      <header class="masthead mb-auto">
+        <div class="inner">
+          <h3 class="masthead-brand" style="text-shadow: 3px -3px 1px #CE0D39, -3px 3px 1px #1E34CE;">NF3D</h3>
+          <nav class="nav nav-masthead justify-content-center">
+            <div class="form-group pr-4">
+
+              <select class="form-control" id="chain-select" 
+              style="font-weight: bold; color: rgba(255, 255, 255); border-color: #333; background-color: #333;">
+                <option value="eth" selected><b>Ethereum</b></option>
+                <option value="rinkeby">Rinkeby</option>
+                <option value="ropsten">Ropsten</option>
+                <option value="solana">Solana</option>
+                <option value="bsc">Binance Chain</option>
+                <option value="matic">Polygon</option>
+                <!-- <option value="optimism">Optimism</option> -->
+              </select>
+            </div>
+
+            <a class="nav-link" id="mode-status" onclick="changeTestingMode()">Testing: ON</a>
+            <a class="nav-link" href="https://github.com/weronikazak">Github</a>
+            <a class="nav-link" id="btn-logout" onclick="logOut()">Logout</a>
+          </nav>
+        </div>
+      </header>
+    
+      <main role="main" class="inner cover row">
+        <!-- 3D MODEL -->
+
+        <div class="col-7 h-100" id="model-container">
+          <div class="container container-main text-left">
+            <div class="container-canvas">
+                <div id="mycanvas">
+                </div>
+            </div>
+        </div>
+        </div>
+        
+        <div class="col-5">
+            <!-- Sidebars -->
+            <div class="row">
+
+              <!-- Nft details -->
+              <nav class="col-6 border rounded p-4 sidebar">
+                <div class="sidebar-header text-left">
+                    <h3>NFT Details</h3>
+                </div>
+                
+                <div id="nft-details"></div>
+
+                <a href="#" class="btn btn-lg btn-secondary"
+                style="padding: 10px 30px; display: none;"
+                id="mint" onclick="upload();">Mint 3D Model</a>
+                <div id="resultSpace">
+
+                  <a href="#" class="btn btn-lg btn-secondary mt-2"
+                  style="display: none; background-color: #333; border-color: white; color: white;"
+                id="export" onclick="exportModel();">Export 3D Model</a>
+                <div id="resultSpace">
+                  
+                </div>
+            </nav>
+            <!-- end Nft details -->
+
+            <!-- nft gallery -->
+            <nav class="col-6 border rounded p-4 sidebar">
+              <div class="sidebar-header text-left">
+                  <h3>Your NFTs</h3>
+              </div>
+
+              <div style="overflow-y: scroll; max-height: 65vh;">
+                <div id="nft-gallery"></div>
+              </div>
+
+              <a href="#" class="btn btn-lg btn-secondary"
+                id="nft-button" onclick="getNFTs();">My NFTs</a>
+            </nav>
+            <!-- end nft gallery -->
+
+            </div>
+        </div>
+      </main>
+    
+      <footer class="mastfoot mt-auto">
+        <div class="inner">
+          <p>Project created for the <a href="https://buildquest.ethglobal.com/">ETH BuildQuest Hakathon</a>, 2022 by <a href="https://www.linkedin.com/in/weronikawzak/">Weronika Zak</a>.</p>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+    $('#chain-select').on('change', function() {
+        var selected_chain = $(this).find(":selected").val();
+        CURRENT_CHAIN = selected_chain;
+        document.getElementById("nft-gallery").innerHTML = "";
+        getNFTs();
+    });
+
+    $(".nft-image").on("click", () => {
+      $(this).parent.style.background = "#282828";
+    })
+
+    async function changeTestingMode() {
+      TEST_MODE = !TEST_MODE;
+
+      if (TEST_MODE) {
+          document.getElementById("mode-status").innerHTML = "Testing: ON"
+      } else {
+          document.getElementById("mode-status").innerHTML = "Testing: OFF"
+      }
+      document.getElementById("nft-gallery").innerHTML = "";
+
+      console.log("Changed to ", CURRENT_CHAIN)
+
+      await getNFTs();
+  }
+    </script>
+    </body>
+</html>
